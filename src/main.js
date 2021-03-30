@@ -59,6 +59,10 @@ App = {
         App.contracts.Flip.setProvider(App.web3Provider);
 
         App.contracts.FlipInstance = await App.contracts.Flip.deployed();
+
+        App.contracts.FlipInstance.contract.events
+            .bet("", null)
+            .on("data", App.betEventReceived);
     },
 
     flip: async function (side) {
@@ -68,15 +72,14 @@ App = {
         App.contracts.FlipInstance.flip(side == "heads" ? 0 : 1, {
             value: amount,
             from: accounts[0],
-        }).on("receipt", function (receipt) {
-            let betEvent = receipt.logs[0].args;
-            console.log(betEvent);
-            if (betEvent.win) {
-                alert("You won!: " + betEvent.bet);
-            } else {
-                alert("You lost!: " + betEvent.bet);
-            }
         });
+    },
+    betEventReceived: function (event) {
+        if (event.returnValues.win) {
+            alert("You won!: " + event.returnValues.bet);
+        } else {
+            alert("You lost!: " + event.returnValues.bet);
+        }
     },
 };
 
