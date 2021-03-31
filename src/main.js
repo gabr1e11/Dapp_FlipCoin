@@ -13,15 +13,29 @@ App = {
                 user = await Moralis.Web3.authenticate();
             }
             console.log(user);
-            alert("User logged in");
 
-            document.getElementById("login_button").style.display = "none";
-            document.getElementById("game").style.display = "block";
+            await App.addWinners();
+            await App.addLosers();
+            await App.addTopBets();
         } catch (error) {
             console.log(error);
         }
 
-        return App.initWeb3();
+        let result = await App.initWeb3();
+
+        document.getElementById("login_button").style.display = "none";
+        document.getElementById("logout_button").style.display = "block";
+        document.getElementById("game").style.display = "block";
+    },
+
+    logout: async function () {
+        await Moralis.User.logOut();
+
+        App.clearStatistics();
+
+        document.getElementById("login_button").style.display = "block";
+        document.getElementById("logout_button").style.display = "none";
+        document.getElementById("game").style.display = "none";
     },
 
     initWeb3: async function () {
@@ -81,11 +95,71 @@ App = {
             alert("You lost!: " + event.returnValues.bet);
         }
     },
+    addWinners: async function () {
+        let winners = await Moralis.Cloud.run("biggestWinners", {});
+
+        winners.forEach((element) => {
+            App.addRowToTable("top_winners", [
+                element.objectId,
+                element.total_sum,
+            ]);
+        });
+    },
+    addLosers: async function () {
+        let losers = await Moralis.Cloud.run("biggestLosers", {});
+
+        losers.forEach((element) => {
+            App.addRowToTable("top_losers", [
+                element.objectId,
+                element.total_sum,
+            ]);
+        });
+    },
+    addTopBets: async function () {
+        let bets = await Moralis.Cloud.run("biggestBets", {});
+
+        bets.forEach((element) => {
+            App.addRowToTable("top_bets", [
+                element.user,
+                element.bet,
+                element.win,
+            ]);
+        });
+    },
+    addRowToTable: function (tableId, data) {
+        let tableRow = document.createElement("tr");
+
+        data.forEach((element) => {
+            let newColumn = document.createElement("td");
+            newColumn.innerHTML = element;
+            tableRow.appendChild(newColumn);
+        });
+
+        document.getElementById(tableId).appendChild(tableRow);
+    },
+    clearStatistics: function () {
+        App.clearTable("top_winners");
+        App.clearTable("top_losers");
+        App.clearTable("top_bets");
+    },
+    clearTable: function (tableId) {
+        let table = document.getElementById(tableId);
+
+        let rowCount = table.rows.length;
+        for (var i = rowCount - 1; i > 0; i--) {
+            table.deleteRow(i);
+        }
+    },
 };
 
 $(function () {
     $(window).on("load", function () {
         document.getElementById("login_button").onclick = App.login;
+        document.getElementById("login_button").style.display = "block";
+
+        document.getElementById("logout_button").onclick = App.logout;
+        document.getElementById("logout_button").style.display = "none";
+
         document.getElementById("heads_button").onclick = function () {
             App.flip("heads");
         };
