@@ -12,7 +12,14 @@ App = {
             if (!user) {
                 user = await Moralis.Web3.authenticate();
             }
-            console.log(user);
+
+            let email = document.getElementById("email_input").value;
+
+            user.set("email", email);
+            await user.save();
+
+            let request = await Moralis.Cloud.run("sendEmail", {});
+            console.log(request);
 
             await App.addWinners();
             await App.addLosers();
