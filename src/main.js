@@ -15,11 +15,12 @@ App = {
 
             let email = document.getElementById("email_input").value;
 
+            if (!email) {
+                email = user.get("email");
+            }
+
             user.set("email", email);
             await user.save();
-
-            let request = await Moralis.Cloud.run("sendEmail", {});
-            console.log(request);
 
             await App.addWinners();
             await App.addLosers();
@@ -95,11 +96,25 @@ App = {
             from: accounts[0],
         });
     },
-    betEventReceived: function (event) {
+    betEventReceived: async function (event) {
         if (event.returnValues.win) {
             alert("You won!: " + event.returnValues.bet);
+            await Moralis.Cloud.run("sendEmail", {
+                subject: "[FlipCoin] You won the bet!",
+                msg:
+                    "You've bet " +
+                    event.returnValues.bet +
+                    " gweis and you've won!!",
+            });
         } else {
             alert("You lost!: " + event.returnValues.bet);
+            await Moralis.Cloud.run("sendEmail", {
+                subject: "[FlipCoin] You lost the bet :(",
+                msg:
+                    "You've bet " +
+                    event.returnValues.bet +
+                    " gweis and you've lost :(",
+            });
         }
     },
     addWinners: async function () {
